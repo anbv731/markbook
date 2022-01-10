@@ -3,12 +3,20 @@ import 'package:markbook/marks_screen.dart';
 import 'package:markbook/model.dart';
 import 'package:provider/provider.dart';
 
-class ToDoScreen extends StatelessWidget {
-  int upIndex = -1;
+class ToDoScreen extends StatefulWidget {
+  @override
+  _ToDoScreenState createState() => _ToDoScreenState();
+}
 
+class _ToDoScreenState extends State<ToDoScreen> {
   @override
   Widget build(BuildContext context) {
+    int upIndex = -1;
     upIndex = ModalRoute.of(context)!.settings.arguments as int;
+    // ToDoListModel _list=ToDoListModel();
+    // _list=context
+    //     .read<ListOfToDoLists>()
+    //     .getList[upIndex];
 
     return Scaffold(
       appBar: AppBar(
@@ -35,19 +43,43 @@ class ToDoScreen extends StatelessWidget {
         child: Icon(Icons.edit),
       ),
       body: ReorderableListView.builder(
-        onReorder: (oldIndex, newIndex) {
-          context
-              .read<ListOfToDoLists>()
-              .getList[upIndex]
-              .insertData(oldIndex, newIndex);
-        },
-        shrinkWrap: true,
+        //shrinkWrap: true,
         itemCount:
+
             context.watch<ListOfToDoLists>().getList[upIndex].getData.length,
-        itemBuilder: (context, int index) {
-          return MarkTextField(
+        itemBuilder: (context, index) {
+          return
+              //   Card(
+              //   key: ValueKey(_list.getData[index].getNote),
+              //
+              //   color: Colors.amberAccent,
+              //   child: Text(_list.getData[index].getNote),
+              // );
+          //     ListTile(
+          //       key: UniqueKey(),
+          //       title:
+                Container(key: ValueKey(index),
+                  child: MarkTextField(
             upIndex,
             index,
+
+             ),
+                );
+        },
+        onReorder: (oldIndex, newIndex) {
+          setState(
+            () {
+              if (newIndex > oldIndex) {
+                newIndex = newIndex - 1;
+              }
+
+              context
+                  .read<ListOfToDoLists>()
+                  .getList[upIndex]
+                  .insertData(oldIndex, newIndex);
+              context
+                  .read<ListOfToDoLists>().notifyListeners();
+            },
           );
         },
       ),

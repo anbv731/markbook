@@ -56,7 +56,7 @@ class ToDoListModel  {
   }
 
   void removeData(int index) {
-    _data.remove(index);
+    _data.removeAt(index);
 
   }
   void insertData (int oldIndex, int newIndex){

@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:markbook/model.dart';
@@ -8,7 +6,9 @@ import 'package:provider/provider.dart';
 class MarkTextField extends StatelessWidget {
   MarkTextField(this.upIndex, this.index);
 
-  Key key = UniqueKey();
+  TextEditingController _textcontroller = TextEditingController();
+
+  //Key key = GlobalKey();
 
   int upIndex = -1;
 
@@ -16,76 +16,93 @@ class MarkTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-        child: Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Align(
-          alignment: Alignment.centerLeft,
-          child: GestureDetector(
-            onTap: () => {
+    _textcontroller = TextEditingController(
+        text: context
+            .watch<ListOfToDoLists>()
+            .getList[upIndex]
+            .getData[index]
+            .getNote);
+    return Dismissible(
+      background: Container(color: Colors.red),
+      key: ValueKey(index),
+      onDismissed: (DismissDirection direction) {
+        context.read<ListOfToDoLists>().getList[upIndex].removeData(index);
+        context.read<ListOfToDoLists>().notifyListeners();
+      },
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: GestureDetector(
+              onTap: () => {
+                context
+                    .read<ListOfToDoLists>()
+                    .getList[upIndex]
+                    .getData[index]
+                    .changePriority(),
+                context.read<ListOfToDoLists>().notifyListeners(),
+              },
+              child: context
+                      .watch<ListOfToDoLists>()
+                      .getList[upIndex]
+                      .getData[index]
+                      .getPriority
+                  ? Icon(Icons.priority_high, color: Colors.red, size: 30)
+                  : Icon(
+                      Icons.priority_high,
+                      color: Colors.grey,
+                      size: 30,
+                    ),
+            ),
+          ),
+          Expanded(
+              child: TextFormField(
+            textInputAction: TextInputAction.go,
+            keyboardType: TextInputType.multiline,
+            maxLines: null,
+            controller: _textcontroller,
+            //initialValue: _textcontroller.text(),
+            onFieldSubmitted: (newNote) {
               context
                   .read<ListOfToDoLists>()
                   .getList[upIndex]
                   .getData[index]
-                  .changePriority(),
-              context.read<ListOfToDoLists>().notifyListeners(),
+                  .changeNote(newNote);
+              context.read<ListOfToDoLists>().notifyListeners();
             },
-            child: context
-                    .watch<ListOfToDoLists>()
+          )),
+          Align(
+            alignment: FractionalOffset(1, 1),
+            child: GestureDetector(
+              onTap: () => {
+                context
+                    .read<ListOfToDoLists>()
                     .getList[upIndex]
                     .getData[index]
-                    .getPriority
-                ? Icon(Icons.priority_high, color: Colors.red, size: 20)
-                : Icon(
-                    Icons.priority_high,
-                    color: Colors.grey,
-                    size: 20,
-                  ),
+                    .changeDone(),
+                context.read<ListOfToDoLists>().notifyListeners()
+              },
+              child: context
+                      .watch<ListOfToDoLists>()
+                      .getList[upIndex]
+                      .getData[index]
+                      .getDone
+                  ? Icon(Icons.done, color: Colors.red, size: 30)
+                  : Icon(
+                      Icons.done,
+                      color: Colors.grey,
+                      size: 30,
+                    ),
+            ),
           ),
-        ),
-        Expanded(
-            child: TextFormField(
-          initialValue: context
-              .watch<ListOfToDoLists>()
-              .getList[upIndex]
-              .getData[index]
-              .getNote,
-          onFieldSubmitted: (newNote) {
-            context
-                .read<ListOfToDoLists>()
-                .getList[upIndex]
-                .getData[index]
-                .changeNote(newNote);
-            context.read<ListOfToDoLists>().notifyListeners();
-          },
-        )),
-        Align(
-          alignment: FractionalOffset(1, 1),
-          child: GestureDetector(
-            onTap: () => {
-              context
-                  .read<ListOfToDoLists>()
-                  .getList[upIndex]
-                  .getData[index]
-                  .changeDone(),
-              context.read<ListOfToDoLists>().notifyListeners()
-            },
-            child: context
-                    .watch<ListOfToDoLists>()
-                    .getList[upIndex]
-                    .getData[index]
-                    .getDone
-                ? Icon(Icons.done, color: Colors.red, size: 20)
-                : Icon(
-                    Icons.done,
-                    color: Colors.grey,
-                    size: 20,
-                  ),
-          ),
-        ),
-      ],
-    ));
+          Icon(
+            Icons.reorder,
+            size: 30,
+          )
+        ],
+      ),
+    );
   }
 }
 
@@ -175,7 +192,3 @@ class Mark extends StatelessWidget {
     ));
   }
 }
-
-
-
-
