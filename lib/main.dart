@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:markbook/new_to_do_screen.dart';
 import 'package:markbook/preview.dart';
+import 'package:markbook/services/DatabaseHandler.dart';
 import 'package:markbook/to_do_screen.dart';
 import 'package:provider/provider.dart';
 import 'model.dart';
@@ -13,27 +14,80 @@ void main() {
   //     home: HomeScreen(),
   //   ),
   // );
-  runApp(MyApp());
+  runApp(ChangeNotifierProvider(
+    create: (context) => ListOfToDoLists(),
+    child: MyApp(),
+  ));
 }
 
-class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
+class MyApp extends StatefulWidget {
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  DatabaseHandler handler = DatabaseHandler();
+  List<MarkMapModel> marks = [];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance?.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance?.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
+    print('MyApp state = $state');
+    if (state == AppLifecycleState.inactive) {
+      // app transitioning to other state.
+      marks = Provider.of<ListOfToDoLists>(context)
+          .getList[0]
+          .getData
+          .map((e) => e.toMarkMapModel())
+          .toList();
+      handler.insertMark(marks);
+      print(
+          'length ${(await handler.retrieveMarks()).length}');
+    } else if (state == AppLifecycleState.paused) {
+      // app is on the background.
+      marks = context
+          .read<ListOfToDoLists>()
+          .getList[0]
+          .getData
+          .map((e) => e.toMarkMapModel())
+          .toList();
+      handler.insertMark(marks);
+      print(
+          'length ${(await handler.retrieveMarks()).length}');
+    } else if (state == AppLifecycleState.detached) {
+      // flutter engine is running but detached from views
+    } else if (state == AppLifecycleState.resumed) {
+      //app is visible and running.
+      context.read<ListOfToDoLists>().getList[0].newData(
+        (await handler.retrieveMarks())
+            .map((e) => MarkModel().fromMarkMapModel(e))
+            .toList(),
+      );
+      context.read<ListOfToDoLists>().notifyListeners();
+      runApp(MyApp()); // run your App class again
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider<ListOfToDoLists>(
-            create: (context) => ListOfToDoLists()),
-        ChangeNotifierProvider<X>(create: (context) => X()),
-        ChangeNotifierProvider<Y>(create: (context) => Y())
-      ],
-      child: MaterialApp(
-        routes: {
-          '/ToDoScreen': (context) => ToDoScreen(),
-          '/newToDoScreenElse': (context) => NewToDoScreen(),
-        },
-        home: MainScreen(),
-      ),
+
+    return MaterialApp(
+      routes: {
+        '/ToDoScreen': (context) => ToDoScreen(),
+        '/newToDoScreenElse': (context) => NewToDoScreen(),
+      },
+      home: MainScreen(),
     );
   }
 }
@@ -48,6 +102,8 @@ class Arguments {
 class MainScreen extends StatelessWidget {
   ToDoListModel newToDoList = ToDoListModel();
   bool marker = true;
+  DatabaseHandler handler = DatabaseHandler();
+  List<MarkMapModel> marks = [];
 
   @override
   Widget build(BuildContext context) {
@@ -62,16 +118,27 @@ class MainScreen extends StatelessWidget {
             icon: Icon(Icons.add)),
       ),
       floatingActionButton: FloatingActionButton(onPressed: () async {
-        final result = await Navigator.pushNamed(
-          context,
-          '/newToDoScreen',
-          arguments: Arguments(newToDoList, marker),
-        );
-        newToDoList = result as ToDoListModel;
-        context.read<ListOfToDoLists>().addData(newToDoList);
-        int a = newToDoList.getData.length;
-        print('$a');
-      }),
+        marks = context
+            .read<ListOfToDoLists>()
+            .getList[0]
+            .getData
+            .map((e) => e.toMarkMapModel())
+            .toList();
+        handler.insertMark(marks);
+        print('length ${(await handler.retrieveMarks()).length}');
+      }
+          //     onPressed: () async {
+          //   final result = await Navigator.pushNamed(
+          //     context,
+          //     '/newToDoScreen',
+          //     arguments: Arguments(newToDoList, marker),
+          //   );
+          //   newToDoList = result as ToDoListModel;
+          //   context.read<ListOfToDoLists>().addData(newToDoList);
+          //   int a = newToDoList.getData.length;
+          //   print('$a');
+          //}
+          ),
       body: StaggeredGridView.countBuilder(
           crossAxisCount: 2,
           crossAxisSpacing: 10,
@@ -97,5 +164,3 @@ class MainScreen extends StatelessWidget {
     );
   }
 }
-
-
